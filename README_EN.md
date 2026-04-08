@@ -33,6 +33,7 @@ If you are not looking for just another CDP-based automation library, but instea
 - **Native actions that preserve a large amount of `isTrusted` behavior**
 - **Built-in human-like interaction capability for high-risk pages**
 - **Support for interception, mocking, collectors, and network control**
+- **Support for different user contexts in one browser, isolating cookies and storage across tabs**
 - **A Firefox automation stack that is easier to maintain long-term**
 
 then `ruyiPage` is built for that direction.
@@ -46,6 +47,7 @@ It especially emphasizes four things:
 - **No CDP dependency**, which naturally avoids the CDP exposure surface
 - **Native action chains first**, to keep input, drag, click, and similar behavior closer to real `isTrusted` browser interaction
 - **Built-in human-like interaction support**, better suited to high-risk pages
+- **Built-in user context isolation**, suitable for multi-account and multi-session flows in one browser
 - **High-level APIs that are easy to get started with**, which also helps teams keep a consistent code style
 
 ---
@@ -1072,6 +1074,7 @@ Suggested order:
 - `23_download.py`
 - `24_navigation_events.py`
 - `25_browser_user_context.py`
+- `37_three_isolated_user_context_tabs.py` single browser, multiple tabs, different user contexts, isolated cookies
 - `26_browsing_context_advanced.py`
 - `27_emulation_advanced.py`
 - `28_network_data_collector.py`
@@ -1105,8 +1108,7 @@ This is also the design source for many high-level APIs in this project, such as
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/chart?repos=LoseNine/ruyipage&type=date&legend=top-left)](https://www.star-history.com/?repos=LoseNine%2Fruyipage&type=date&legend=top-left)
-
+[![Star History Chart](https://api.star-history.com/svg?repos=LoseNine/ruyipage&type=Date)](https://www.star-history.com/#LoseNine/ruyipage&Date)
 ---
 
 ## Final Notes

@@ -33,6 +33,7 @@
 - **原生动作能实现大量 `isTrusted` 行为**
 - **内置拟人化行为能力，适合高风控页面**
 - **支持网络劫持、拦截、mock、collector 等能力**
+- **支持单浏览器多 tab 使用不同 user context，隔离 Cookie / 存储上下文**
 - **更适合做长期维护的 Firefox 自动化体系**
 
 那么 `ruyiPage` 就是为这个方向准备的。
@@ -46,6 +47,7 @@
 - **不依赖 CDP**，天然没有 CDP 路线的那层暴露面
 - **原生动作链优先**，尽量让输入、拖拽、点击等行为保持 `isTrusted`
 - **内置拟人行为能力**，更适合高风控页面的真实交互场景
+- **支持 user context 隔离**，适合同浏览器多账号、多会话并行
 - **高层 API 可直接上手**，更适合新手和团队统一维护
 
 ---
@@ -1107,6 +1109,7 @@ page.extensions.uninstall(ext_id)
 - `23_download.py`
 - `24_navigation_events.py`
 - `25_browser_user_context.py`
+- `37_three_isolated_user_context_tabs.py` 单浏览器多 tab 使用不同 user context，实现 Cookie 隔离
 - `26_browsing_context_advanced.py`
 - `27_emulation_advanced.py`
 - `28_network_data_collector.py`
@@ -1140,8 +1143,7 @@ page.extensions.uninstall(ext_id)
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/chart?repos=LoseNine/ruyipage&type=date&legend=top-left)](https://www.star-history.com/?repos=LoseNine%2Fruyipage&type=date&legend=top-left)
-
+[![Star History Chart](https://api.star-history.com/svg?repos=LoseNine/ruyipage&type=Date)](https://www.star-history.com/#LoseNine/ruyipage&Date)
 ---
 
 ## 最后说明
