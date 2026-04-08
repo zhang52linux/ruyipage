@@ -169,7 +169,7 @@ class FirefoxElement(BaseElement):
         return self.html
 
     @property
-    def value(self) -> str | None:
+    def value(self) -> "str | None":
         """输入元素的值"""
         return self._run_safe("(el) => el.value")
 
@@ -924,7 +924,9 @@ class FirefoxElement(BaseElement):
 
         return NoneElement(self._owner)
 
-    def child(self, locator=None, index=1, timeout=None) -> "FirefoxElement | NoneElement":
+    def child(
+        self, locator=None, index=1, timeout=None
+    ) -> "FirefoxElement | NoneElement":
         """获取子元素
 
         Args:
