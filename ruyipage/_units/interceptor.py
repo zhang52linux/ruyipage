@@ -4,6 +4,7 @@
 通过 BiDi network.addIntercept 实现请求拦截、修改、Mock。
 """
 
+import base64
 import time
 import threading
 from queue import Queue, Empty
@@ -31,6 +32,7 @@ class InterceptedRequest(object):
         - ``url``: 请求 URL
         - ``method``: 请求方法，如 ``GET`` / ``POST``
         - ``headers``: 请求头字典，便于直接判断某个头是否已注入
+        - ``body``: 请求体字符串。若浏览器事件未携带请求体，则为 ``None``
 
     常用方法：
         - ``continue_request()`` 放行请求，可选修改 URL、方法、头、体
@@ -40,24 +42,139 @@ class InterceptedRequest(object):
         - ``mock()`` 直接返回一份模拟响应
     """
 
-    def __init__(self, params, driver):
+    def __init__(self, params, driver, collector=None):
         self._driver = driver
         self._params = params
         self._request = params.get("request", {})
+        self._collector = collector
         self._handled = False
 
-        self.request_id: str = self._request.get("request", "")
-        self.url: str = self._request.get("url", "")
-        self.method: str = self._request.get("method", "")
-        self.headers: Dict[str, str] = {
+        self._request_id: str = self._request.get("request", "")
+        self._url: str = self._request.get("url", "")
+        self._method: str = self._request.get("method", "")
+        self._headers: Dict[str, str] = {
             h["name"]: h["value"].get("value", "")
             if isinstance(h.get("value"), dict)
             else str(h.get("value", ""))
             for h in self._request.get("headers", [])
         }
-        self.phase: Optional[str] = (
+        self._body: Optional[str] = None
+        self._phase: Optional[str] = (
             params.get("intercepts", [None])[0] if params.get("intercepts") else None
         )
+
+    @property
+    def request_id(self) -> str:
+        """当前请求的唯一 ID。
+
+        适用场景：
+            - 与 ``page.network.add_data_collector()`` 联动读取请求体或响应体
+            - 在日志里关联一次完整请求生命周期
+        """
+        return self._request_id
+
+    @property
+    def url(self) -> str:
+        """当前请求 URL。"""
+        return self._url
+
+    @property
+    def method(self) -> str:
+        """当前请求方法，如 ``GET`` / ``POST``。"""
+        return self._method
+
+    @property
+    def headers(self) -> Dict[str, str]:
+        """当前请求头字典。
+
+        返回值已经被整理成 ``{name: value}`` 形式，便于直接判断某个头是否存在。
+        """
+        return self._headers
+
+    @property
+    def phase(self) -> Optional[str]:
+        """当前拦截阶段。
+
+        常见值：
+            - ``beforeRequestSent``
+            - ``responseStarted``
+            - ``authRequired``
+        """
+        return self._phase
+
+    def _extract_body_from_value(self, body) -> Optional[str]:
+        """把 BiDi bytes value 结构转成字符串。"""
+        return self._decode_body_value(body)
+
+    def _decode_body_value(self, body) -> Optional[str]:
+        if body is None:
+            return None
+
+        if isinstance(body, str):
+            return body
+
+        if not isinstance(body, dict):
+            return str(body)
+
+        body_type = body.get("type")
+        value = body.get("value")
+        if value is None:
+            return None
+
+        if body_type == "string":
+            return str(value)
+
+        if body_type == "base64":
+            try:
+                return base64.b64decode(value).decode("utf-8")
+            except Exception:
+                return str(value)
+
+        return str(value)
+
+    def _load_body(self) -> Optional[str]:
+        body = self._extract_body_from_value(self._request.get("body"))
+        if body is None:
+            body = self._extract_body_from_value(self._params.get("body"))
+        if body is not None:
+            return body
+
+        if not self._collector or not self.request_id:
+            return None
+
+        try:
+            data = self._collector.get(self.request_id, data_type="request")
+        except Exception:
+            return None
+
+        decoded = self._decode_body_value(getattr(data, "bytes", None))
+        if decoded is not None:
+            return decoded
+
+        decoded = self._decode_body_value(getattr(data, "base64", None))
+        if decoded is not None:
+            return decoded
+
+        raw = getattr(data, "raw", None)
+        if isinstance(raw, dict):
+            for key in ("data", "body", "value"):
+                decoded = self._decode_body_value(raw.get(key))
+                if decoded is not None:
+                    return decoded
+            decoded = self._decode_body_value(raw)
+            if decoded is not None:
+                return decoded
+        elif raw is not None:
+            return str(raw)
+
+        return None
+
+    @property
+    def body(self) -> Optional[str]:
+        """请求体字符串。拿不到时返回 ``None``。"""
+        if self._body is None:
+            self._body = self._load_body()
+        return self._body
 
     @property
     def handled(self):
@@ -270,6 +387,7 @@ class Interceptor(object):
         self._active = False
         self._intercept_id = None
         self._subscription_id = None
+        self._request_collector = None
         self._handler = None
         self._queue = Queue()
 
@@ -295,6 +413,16 @@ class Interceptor(object):
 
         self._handler = handler
         self._queue = Queue()
+        self._request_collector = None
+
+        if "beforeRequestSent" in phases:
+            try:
+                self._request_collector = self._owner.network.add_data_collector(
+                    ["beforeRequestSent"],
+                    data_types=["request"],
+                )
+            except Exception:
+                self._request_collector = None
 
         # 注册拦截
         result = bidi_network.add_intercept(
@@ -376,6 +504,13 @@ class Interceptor(object):
                 pass
             self._subscription_id = None
 
+        if self._request_collector:
+            try:
+                self._request_collector.remove()
+            except Exception:
+                pass
+            self._request_collector = None
+
         drv = self._owner._driver
         for ev in (
             "network.beforeRequestSent",
@@ -400,7 +535,11 @@ class Interceptor(object):
     def _on_intercept(self, params):
         if not self._active:
             return
-        req = InterceptedRequest(params, self._owner._driver._browser_driver)
+        req = InterceptedRequest(
+            params,
+            self._owner._driver._browser_driver,
+            collector=self._request_collector,
+        )
         if self._handler:
             try:
                 self._handler(req)
@@ -414,7 +553,11 @@ class Interceptor(object):
     def _on_auth(self, params):
         if not self._active:
             return
-        req = InterceptedRequest(params, self._owner._driver._browser_driver)
+        req = InterceptedRequest(
+            params,
+            self._owner._driver._browser_driver,
+            collector=self._request_collector,
+        )
         if self._handler:
             try:
                 self._handler(req)

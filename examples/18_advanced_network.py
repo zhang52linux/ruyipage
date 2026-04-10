@@ -9,6 +9,9 @@
 5) responseStarted 阶段修改响应状态
 6) 队列模式 wait() 手动处理
 7) fetchError 事件监听
+8) 直接读取请求体 req.body
+9) GET 请求高频字段读取
+10) POST 请求 wait() 模式读取 body
 """
 
 import io
@@ -221,6 +224,88 @@ def test_advanced_network():
                 break
             fetch_error_list.append(evt)
         print(f"   fetchError 事件数量: {len(fetch_error_list)}")
+
+        # 8) 直接读取请求体
+        print("\n8. 直接读取请求体 req.body:")
+        captured_bodies = []
+
+        def body_handler(req):
+            if "/api/echo" in req.url and req.method == "POST":
+                captured_bodies.append(req.body)
+                print(f"   捕获 body: {req.body}")
+            req.continue_request()
+
+        page.intercept.start_requests(body_handler)
+        echoed = page.run_js(
+            """
+            return fetch(arguments[0], {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: 'hello-body'})
+            }).then(r => r.json()).then(d => d.body).catch(e => String(e));
+            """,
+            server.get_url("/api/echo"),
+            as_expr=False,
+        )
+        page.wait(0.5)
+        print(f"   服务端收到: {echoed}")
+        print(f"   拦截侧读取: {captured_bodies[-1] if captured_bodies else None}")
+        page.intercept.stop()
+
+        # 9) GET 请求高频字段读取
+        print("\n9. GET 请求高频字段读取:")
+        captured_get = []
+
+        def get_fields_handler(req):
+            if "/api/headers" in req.url:
+                captured_get.append(req)
+            req.continue_request()
+
+        page.intercept.start_requests(get_fields_handler)
+        get_resp = page.run_js(
+            """
+            return fetch(arguments[0]).then(r => r.json()).catch(e => ({error:String(e)}));
+            """,
+            server.get_url("/api/headers"),
+            as_expr=False,
+        )
+        page.wait(0.5)
+        page.intercept.stop()
+        get_req = captured_get[0] if captured_get else None
+        if get_req:
+            print(
+                f"   GET字段: method={get_req.method}, request_id={get_req.request_id}, body={get_req.body}"
+            )
+            print(f"   GET headers Accept: {get_req.headers.get('Accept')}")
+        else:
+            print("   ⚠ 未捕获到 GET 请求")
+        print(f"   服务端返回类型: {type(get_resp).__name__}")
+
+        # 10) POST 请求 wait() 模式读取 body
+        print("\n10. POST 请求 wait() 模式读取 body:")
+        page.intercept.start(handler=None, phases=["beforeRequestSent"])
+        page.run_js(
+            """
+            fetch(arguments[0], {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({mode: 'queue', value: 99})
+            }).catch(() => null);
+            return true;
+            """,
+            server.get_url("/api/echo"),
+            as_expr=False,
+        )
+        queued_post = page.intercept.wait(timeout=8)
+        if queued_post:
+            print(
+                f"   wait捕获POST: {queued_post.method} {queued_post.url} body={queued_post.body}"
+            )
+            queued_post.continue_request()
+        else:
+            print("   ⚠ 未捕获到 POST 请求")
+        page.wait(0.5)
+        page.intercept.stop()
 
         print("\n" + "=" * 60)
         print("✓ 所有高级网络功能测试通过！")

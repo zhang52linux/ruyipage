@@ -222,6 +222,28 @@ class TestServer(object):
                 self.send_header("Content-Length", "0")
                 self.end_headers()
 
+            def do_POST(self):
+                parsed = urlparse(self.path)
+                path = parsed.path
+                length = int(self.headers.get("Content-Length", "0") or "0")
+                raw_body = self.rfile.read(length) if length > 0 else b""
+                body_text = raw_body.decode("utf-8", errors="replace")
+
+                if path == "/api/echo":
+                    self._write_json(
+                        200,
+                        {
+                            "status": "ok",
+                            "method": "POST",
+                            "body": body_text,
+                            "content_type": self.headers.get("Content-Type", ""),
+                        },
+                        headers=self._cors_headers(),
+                    )
+                    return
+
+                self._write_text(404, "not found", headers=self._cors_headers())
+
         self._server = ThreadingHTTPServer((self.host, self.port), Handler)
         self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
         self._thread.start()
