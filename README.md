@@ -121,6 +121,32 @@ print(page.title)
 page.quit()
 ```
 
+### 开启隐私模式
+
+```python
+from ruyipage import FirefoxOptions, FirefoxPage, launch
+
+# 方式一：在配置对象上开启 Firefox 私密浏览模式
+opts = FirefoxOptions()
+opts.private_mode(True)
+
+page = FirefoxPage(opts)
+page.get("https://www.example.com")
+page.quit()
+
+# 方式二：直接用 launch()
+page = launch(private=True)
+page.get("https://www.example.com")
+page.quit()
+```
+
+说明：
+
+- `private=True` / `opts.private_mode(True)` 会为 Firefox 增加 `-private` 启动参数
+- 这和默认的临时 `profile` 不是一回事
+- 如果你只是想要一次性会话，不复用历史数据，不传 `user_dir` 也可以
+- 完整示例可参考根目录：`quickstart_private_mode.py`
+
 ### 接管已打开的浏览器
 
 如果 Firefox 已经是你手动打开的，或者是指纹浏览器先打开的，也可以直接接管现有实例。
@@ -502,36 +528,6 @@ page.get("http://ipinfo.io/json")
 - 你在自己的 Firefox 内核里已经实现了 `fpfile` 驱动的 HTTP 代理认证
 - 希望业务层只保留最小代理配置入口
 - 想让代理用户名密码完全留在 `fpfile` 中，而不是写进业务脚本
-
-### 6. 接管已打开浏览器示例
-
-文件：`examples/39_attach_exist_browser.py`
-
-它会：
-
-- 提示如何给指纹浏览器追加 `--remote-debugging-port`
-- 直接按 Firefox 进程特征自动接管已经打开的浏览器窗口
-- 避免让用户自己维护随机端口范围
-
-核心写法：
-
-```python
-from ruyipage import auto_attach_exist_browser_by_process
-
-page = auto_attach_exist_browser_by_process(
-    latest_tab=True,
-)
-
-print(page.title)
-print(page.url)
-```
-
-适用场景：
-
-- 想先手工或外部程序启动 Firefox，再交给 `ruyiPage`
-- 想自动适配 ADS / FlowerBrowser 这类随机端口指纹浏览器
-- 不想手动维护端口范围，只想直接自动探测并接管
-- 想把“启动浏览器”和“业务自动化”拆成两段流程
 
 ---
 

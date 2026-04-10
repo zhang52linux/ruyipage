@@ -121,6 +121,32 @@ print(page.title)
 page.quit()
 ```
 
+### Enable Private Mode
+
+```python
+from ruyipage import FirefoxOptions, FirefoxPage, launch
+
+# Option 1: enable Firefox private browsing mode on FirefoxOptions
+opts = FirefoxOptions()
+opts.private_mode(True)
+
+page = FirefoxPage(opts)
+page.get("https://www.example.com")
+page.quit()
+
+# Option 2: use launch() directly
+page = launch(private=True)
+page.get("https://www.example.com")
+page.quit()
+```
+
+Notes:
+
+- `private=True` / `opts.private_mode(True)` adds the `-private` startup argument for Firefox
+- This is different from the default temporary `profile`
+- If you only want a one-off session without reusing old data, you can also simply omit `user_dir`
+- Full example: `quickstart_private_mode.py`
+
 ### Attach to an Already-Open Browser
 
 If Firefox is already open manually, or a fingerprint browser is started first, `ruyiPage` can attach to the existing instance directly.

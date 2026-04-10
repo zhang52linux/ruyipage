@@ -171,6 +171,7 @@ def _cleanup_live_probe_infos(infos, keep_address=None):
 def launch(
     *,
     headless=False,
+    private=False,
     port=9222,
     browser_path=None,
     user_dir=None,
@@ -183,6 +184,7 @@ def launch(
 
     Args:
         headless: 是否无头
+        private: 是否启用 Firefox 私密浏览模式
         port: 远程调试端口
         browser_path: Firefox 可执行文件路径。
             适用于 Firefox 安装在非默认目录时。
@@ -204,6 +206,7 @@ def launch(
     opts = FirefoxOptions()
     opts.set_port(port).quick_start(
         headless=headless,
+        private=private,
         window_size=window_size,
         timeout_base=timeout_base,
         timeout_page_load=timeout_page_load,

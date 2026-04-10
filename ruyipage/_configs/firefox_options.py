@@ -57,6 +57,7 @@ class FirefoxOptions(object):
         self._auto_port = False
         self._user_context = None  # 容器标签页
         self._fpfile = None  # 指纹配置文件路径
+        self._private_mode = False  # Firefox 私密浏览模式
         self._user_prompt_handler = None  # session.UserPromptHandler
 
     # ===== 属性读取 =====
@@ -129,6 +130,11 @@ class FirefoxOptions(object):
     def fpfile(self):
         """指纹配置文件路径"""
         return self._fpfile
+
+    @property
+    def is_private_mode(self):
+        """是否启用 Firefox 私密浏览模式。"""
+        return self._private_mode
 
     @property
     def user_prompt_handler(self):
@@ -415,6 +421,22 @@ class FirefoxOptions(object):
         self._fpfile = path
         return self
 
+    def private_mode(self, on_off=True):
+        """设置 Firefox 私密浏览模式。
+
+        Args:
+            on_off: ``True`` 启用私密模式，``False`` 关闭。
+
+        Returns:
+            self
+
+        说明：
+            - 启用后会在启动命令中加入 ``-private``。
+            - 这与临时 profile / user context 不同，属于 Firefox 原生私密浏览模式。
+        """
+        self._private_mode = bool(on_off)
+        return self
+
     def _get_proxy_auth_credentials(self):
         """从 fpfile 中读取代理认证用户名密码。"""
         auth = self._read_httpauth_from_fpfile(self._fpfile)
@@ -486,6 +508,7 @@ class FirefoxOptions(object):
         *,
         browser_path=None,
         user_dir=None,
+        private=False,
         headless=False,
         window_size=(1280, 800),
         timeout_base=10,
@@ -502,6 +525,7 @@ class FirefoxOptions(object):
                 适用于 Firefox 安装在非默认目录时。
             user_dir: 用户目录 / profile 目录。
                 适用于希望复用登录态、Cookie、扩展时。
+            private: 是否启用 Firefox 私密浏览模式。
             headless: 是否无头
             window_size: 窗口大小 (width, height)
             timeout_base: 基础超时
@@ -524,6 +548,7 @@ class FirefoxOptions(object):
             self.set_browser_path(browser_path)
         if user_dir:
             self.set_user_dir(user_dir)
+        self.private_mode(private)
         self.headless(headless)
         if window_size and len(window_size) == 2:
             self.set_window_size(window_size[0], window_size[1])
@@ -552,6 +577,9 @@ class FirefoxOptions(object):
 
         if self._headless:
             cmd.append("--headless")
+
+        if self._private_mode:
+            cmd.append("-private")
 
         if self._fpfile:
             # Firefox 的自定义指纹参数要求使用 --fpfile=<path> 形式。
