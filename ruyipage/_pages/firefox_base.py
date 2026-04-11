@@ -110,7 +110,9 @@ class FirefoxBase(BasePage):
 
     # ===== __call__ 快捷方式 =====
 
-    def __call__(self, locator, index=1, timeout=None) -> "FirefoxElement | NoneElement":
+    def __call__(
+        self, locator, index=1, timeout=None
+    ) -> "FirefoxElement | NoneElement":
         """快捷查找元素: page('locator') 等价于 page.ele('locator')
 
         Args:

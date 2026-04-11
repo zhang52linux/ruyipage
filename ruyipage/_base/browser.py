@@ -766,6 +766,8 @@ class Firefox(object):
                 )
             )
 
+        self._ensure_launch_port_available()
+
         # 启动浏览器
         self._launch_browser()
 
@@ -853,6 +855,25 @@ class Firefox(object):
             return True
         except Exception:
             return False
+
+    def _ensure_launch_port_available(self):
+        """启动前确保目标端口未被其他进程占用。"""
+        if self._options.auto_port:
+            return
+
+        if not self._is_port_open():
+            return
+
+        old_port = self._options.port
+        new_port = self._find_free_port(start=old_port + 1)
+        self._options.set_port(new_port)
+        self._address = self._options.address
+
+        message = "检测到端口 {} 已被占用，ruyiPage 已自动切换到可用端口 {}".format(
+            old_port, new_port
+        )
+        logger.warning(message)
+        print(message)
 
     def _try_connect(self):
         """尝试连接到已有浏览器
@@ -1192,11 +1213,15 @@ class Firefox(object):
         self._contexts[context_id] = tab
         return tab
 
-    def _find_free_port(self):
+    def _find_free_port(self, start=None):
         """查找可用端口"""
-        start = self._options.port
-        if isinstance(self._options.auto_port, int) and self._options.auto_port > 1024:
-            start = self._options.auto_port
+        if start is None:
+            start = self._options.port
+            if (
+                isinstance(self._options.auto_port, int)
+                and self._options.auto_port > 1024
+            ):
+                start = self._options.auto_port
 
         for port in range(start, start + 100):
             try:

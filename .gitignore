@@ -14,6 +14,9 @@ MANIFEST.in
 .ruff_cache/
 .pytest_cache/
 
+# Generated example outputs
+examples/output/
+
 # Virtual environment
 .venv/
 venv/

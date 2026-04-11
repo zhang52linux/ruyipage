@@ -16,7 +16,7 @@ from .._base.browser import Firefox
 from .._configs.firefox_options import FirefoxOptions
 from .._bidi import browsing_context as bidi_context
 
-logger = logging.getLogger('ruyipage')
+logger = logging.getLogger("ruyipage")
 
 
 class FirefoxPage(FirefoxBase):
@@ -36,7 +36,7 @@ class FirefoxPage(FirefoxBase):
         page = FirefoxPage('127.0.0.1:9222')
     """
 
-    _type = 'FirefoxPage'
+    _type = "FirefoxPage"
     _PAGES = {}  # 单例缓存
 
     def __new__(cls, addr_or_opts=None):
@@ -45,7 +45,7 @@ class FirefoxPage(FirefoxBase):
         elif isinstance(addr_or_opts, str):
             address = addr_or_opts
         elif addr_or_opts is None:
-            address = '127.0.0.1:9222'
+            address = "127.0.0.1:9222"
         else:
             address = str(addr_or_opts)
 
@@ -58,7 +58,7 @@ class FirefoxPage(FirefoxBase):
         return instance
 
     def __init__(self, addr_or_opts=None):
-        if hasattr(self, '_page_initialized') and self._page_initialized:
+        if hasattr(self, "_page_initialized") and self._page_initialized:
             return
         self._page_initialized = True
 
@@ -73,8 +73,8 @@ class FirefoxPage(FirefoxBase):
             ctx_id = tab_ids[0]
         else:
             # 如果没有标签页，创建一个
-            result = bidi_context.create(self._firefox.driver, 'tab')
-            ctx_id = result.get('context', '')
+            result = bidi_context.create(self._firefox.driver, "tab")
+            ctx_id = result.get("context", "")
 
         self._init_context(self._firefox, ctx_id)
 
@@ -175,20 +175,20 @@ class FirefoxPage(FirefoxBase):
         import os
 
         if path is None:
-            path = '.'
+            path = "."
         if name is None:
-            title = self.title or 'page'
+            title = self.title or "page"
             # 清理文件名中的非法字符
-            name = ''.join(c for c in title if c not in r'\/:*?"<>|')[:50]
+            name = "".join(c for c in title if c not in r'\/:*?"<>|')[:50]
 
         if as_pdf:
-            file_path = os.path.join(path, name + '.pdf')
+            file_path = os.path.join(path, name + ".pdf")
             self.pdf(file_path)
         else:
-            file_path = os.path.join(path, name + '.html')
+            file_path = os.path.join(path, name + ".html")
             html = self.html
             os.makedirs(path, exist_ok=True)
-            with open(file_path, 'w', encoding='utf-8') as f:
+            with open(file_path, "w", encoding="utf-8") as f:
                 f.write(html)
 
         return file_path

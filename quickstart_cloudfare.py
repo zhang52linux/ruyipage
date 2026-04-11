@@ -5,6 +5,11 @@ from ruyipage import FirefoxOptions, FirefoxPage, Keys
 
 
 QUESTION = "你好，今天天气怎么样？"
+MOBILE_USER_AGENT = (
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) "
+    "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 "
+    "Mobile/15E148 Safari/604.1"
+)
 
 
 def find_input_box(page: FirefoxPage):
@@ -58,7 +63,7 @@ try:
     print("\n-> 访问 https://copilot.microsoft.com/ ...")
     page.get("https://copilot.microsoft.com/", wait="none")
     page.wait(5)
-
+    
     print("-> 等待输入框...")
     input_box = find_input_box(page)
 

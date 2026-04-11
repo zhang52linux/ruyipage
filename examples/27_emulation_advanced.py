@@ -220,6 +220,7 @@ def main() -> None:
         raise
     finally:
         try:
+            page.wait(300)
             page.quit()
         except Exception:
             pass
