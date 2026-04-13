@@ -14,6 +14,7 @@
 >
 > - 自带**过检测火狐内核**
 > - 大量 **`isTrusted`** 原生动作，**无自动化检测点**
+> - 支持多种 JS 事件构造附加 **`ruyi: true`**，让 `Event` / `InputEvent` / `MouseEvent` / `KeyboardEvent` 等事件的 **`isTrusted`** 更贴近真实交互
 > - 支持 **ADS** 等指纹浏览器**直接自动化接管**
 > - 基于 **Firefox + WebDriver BiDi**
 > - 更适合**高风控场景**
@@ -90,6 +91,36 @@ page.get("https://www.example.com")
 print(page.title)
 page.quit()
 ```
+
+### JS 事件 `isTrusted` 对比能力
+
+`ruyiPage` 不只是支持原生点击、输入、悬停这类高 `isTrusted` 动作，也支持在多种 JS 事件构造里附加 `ruyi: true`，用于让事件的 `isTrusted` 表现与真实交互更一致。
+
+例如：
+
+```javascript
+new Event('change', { bubbles: true, ruyi: true })
+new InputEvent('input', { bubbles: true, data: 'A', inputType: 'insertText', ruyi: true })
+new MouseEvent('click', { bubbles: true, clientX: 12, clientY: 24, ruyi: true })
+new KeyboardEvent('keydown', { bubbles: true, key: 'Enter', code: 'Enter', ruyi: true })
+```
+
+可直接运行综合示例：
+
+```bash
+python examples/45_js_setter_untrusted_input.py
+```
+
+这个示例会对比普通 JS 事件与 `ruyi: true` 事件的 `isTrusted`，覆盖：
+
+- `Event`
+- `InputEvent`
+- `KeyboardEvent`
+- `MouseEvent`
+- `FocusEvent`
+- `CustomEvent`
+- `PointerEvent`
+- `WheelEvent`
 
 ### 指定 Firefox 路径和 userdir
 

@@ -14,6 +14,7 @@
 >
 > - Comes with a **detection-resistant Firefox kernel**
 > - A large amount of native **`isTrusted`** actions, with **no automation detection surface**
+> - Supports adding **`ruyi: true`** to many JS event constructors so the **`isTrusted`** behavior of `Event`, `InputEvent`, `MouseEvent`, `KeyboardEvent`, and more can stay closer to real interaction
 > - Supports **direct automated takeover** of fingerprint browsers such as **ADS**
 > - Built on **Firefox + WebDriver BiDi**
 > - Better suited for **high-risk scenarios**
@@ -90,6 +91,36 @@ page.get("https://www.example.com")
 print(page.title)
 page.quit()
 ```
+
+### JS Event `isTrusted` Comparison
+
+`ruyiPage` does not only provide native clicks, typing, hover, and other high-`isTrusted` actions. It also supports adding `ruyi: true` to many JS event constructors so the resulting `isTrusted` behavior stays closer to real user interaction.
+
+For example:
+
+```javascript
+new Event('change', { bubbles: true, ruyi: true })
+new InputEvent('input', { bubbles: true, data: 'A', inputType: 'insertText', ruyi: true })
+new MouseEvent('click', { bubbles: true, clientX: 12, clientY: 24, ruyi: true })
+new KeyboardEvent('keydown', { bubbles: true, key: 'Enter', code: 'Enter', ruyi: true })
+```
+
+You can run the bundled showcase directly:
+
+```bash
+python examples/45_js_setter_untrusted_input.py
+```
+
+This example compares normal JS events with `ruyi: true` events and checks `isTrusted` across:
+
+- `Event`
+- `InputEvent`
+- `KeyboardEvent`
+- `MouseEvent`
+- `FocusEvent`
+- `CustomEvent`
+- `PointerEvent`
+- `WheelEvent`
 
 ### Specify Firefox path and userdir
 
